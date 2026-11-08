@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spelunkr</title>
+<style>
+  html,body{margin:0;height:100%;background:#1C0A57;color:#fff;font-family:sans-serif}
+  body{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center}
+  h1{font-size:72px;letter-spacing:6px;margin:0 0 24px}
+  p{font-size:32px;opacity:.85;margin:8px}
+  button{margin-top:40px;font-size:32px;padding:16px 48px;background:#ffcc33;color:#1C0A57;border:0;border-radius:8px}
+  button:focus{outline:6px solid #fff}
+  #err{display:none}
+</style>
+</head>
+<body>
+  <h1>SPELUNKR</h1>
+  <p id="msg">ADJUSTING THE ANTENNA…</p>
+  <div id="err">
+    <p>No signal. Check the TV's internet connection.</p>
+    <button id="retry">TRY AGAIN</button>
+  </div>
+<script>
+(function () {
+  var URL = 'https://spelunkr.tv/';
+  var tries = 0;
+
+  function fail() {
+    document.getElementById('msg').style.display = 'none';
+    document.getElementById('err').style.display = 'block';
+    document.getElementById('retry').focus();
+  }
+
+  function go() {
+    tries++;
+    if (navigator.onLine === false) { fail(); return; }
+    // Probe first so a dead connection shows a friendly screen instead of a browser error page.
+    var x = new XMLHttpRequest();
+    x.timeout = 10000;
+    x.onload = function () { location.replace(URL); };
+    x.onerror = x.ontimeout = function () { tries < 3 ? setTimeout(go, 2000) : fail(); };
+    try { x.open('HEAD', URL, true); x.send(); } catch (e) { location.replace(URL); }
+  }
+
+  document.getElementById('retry').onclick = function () {
+    tries = 0;
+    document.getElementById('err').style.display = 'none';
+    document.getElementById('msg').style.display = 'block';
+    go();
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.keyCode === 13 && document.getElementById('err').style.display === 'block') {
+      document.getElementById('retry').click();
+    }
+    // Back on this local screen = exit the app
+    if (e.keyCode === 461 && window.webOS && webOS.platformBack) webOS.platformBack();
+    else if (e.keyCode === 461) window.close();
+  });
+
+  go();
+})();
+</script>
+</body>
+</html>

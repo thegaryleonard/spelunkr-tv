@@ -1,0 +1,17 @@
+{
+  "id": "tv.spelunkr.app",
+  "version": "2.1.0",
+  "vendor": "Spelunkr (unofficial wrapper)",
+  "type": "web",
+  "main": "index.html",
+  "title": "Spelunkr",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "splashBackground": "splash.png",
+  "bgColor": "#1C0A57",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "handlesRelaunch": false,
+  "requiredMemory": 300,
+  "requiredACG": []
+}

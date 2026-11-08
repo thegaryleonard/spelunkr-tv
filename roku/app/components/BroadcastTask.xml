@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Background thread: fetches the Spelunkr lineup + schedules and answers "what's on" questions. -->
+<component name="BroadcastTask" extends="Task">
+  <interface>
+    <!-- in:  {type: "now", id, seq} | {type: "guide"} -->
+    <field id="cmd" type="assocarray" alwaysNotify="true" />
+    <!-- out -->
+    <field id="lineup" type="array" />
+    <field id="now" type="assocarray" />
+    <field id="guide" type="assocarray" />
+    <field id="status" type="string" />
+    <field id="clockOffset" type="longinteger" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/source/engine.brs" />
+  <script type="text/brightscript" uri="pkg:/components/BroadcastTask.brs" />
+</component>

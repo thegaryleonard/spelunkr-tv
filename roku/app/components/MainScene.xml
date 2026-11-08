@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene">
+  <interface>
+    <field id="exitApp" type="boolean" value="false" />
+    <field id="launchChannel" type="string" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
+  <children>
+    <Rectangle id="black" width="1920" height="1080" color="0x000000FF" />
+    <Poster id="guideBg" width="1920" height="1080" uri="pkg:/images/guide_bg.png" visible="false" />
+    <Rectangle id="videoFrame" translation="[36,24]" width="584" height="332" color="0x2652B2FF" visible="false" />
+    <Video id="video" width="1920" height="1080" enableUI="false" enableTrickPlay="false" />
+    <Audio id="audio" />
+
+    <!-- full-screen cards: tuning static, bumps, up next, no signal -->
+    <Group id="card" visible="false">
+      <Poster id="cardBg" width="1920" height="1080" uri="pkg:/images/card_bg.png" />
+      <Group id="static" visible="false">
+        <Poster id="st0" width="1920" height="1080" uri="pkg:/images/static0.png" opacity="0.9" />
+        <Poster id="st1" width="1920" height="1080" uri="pkg:/images/static1.png" opacity="0.9" visible="false" />
+        <Poster id="st2" width="1920" height="1080" uri="pkg:/images/static2.png" opacity="0.9" visible="false" />
+        <Poster id="st3" width="1920" height="1080" uri="pkg:/images/static3.png" opacity="0.9" visible="false" />
+        <Rectangle id="stBorder" translation="[300,456]" width="1320" height="168" color="0x2652B2FF" />
+        <Rectangle id="stBox" translation="[304,460]" width="1312" height="160" color="0x1C0A57DD" />
+      </Group>
+      <PixelLogo id="cardLogo" size="120" />
+      <Group id="cardS" visible="false">
+        <Rectangle translation="[899,234]" width="122" height="122" color="0x000000FF" />
+        <Rectangle translation="[905,240]" width="110" height="110" color="0xFFFF00FF" />
+        <Label translation="[905,240]" width="110" height="110" horizAlign="center" vertAlign="center" text="S" color="0x10063AFF">
+          <Font role="font" uri="pkg:/fonts/star4000-large-compressed.ttf" size="96" />
+        </Label>
+      </Group>
+      <Label id="cardKicker" translation="[160,450]" width="1600" height="56" horizAlign="center" color="0x8FFDFAFF">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="40" />
+      </Label>
+      <Label id="cardShadow" translation="[264,534]" width="1400" height="320" horizAlign="center" wrap="true" maxLines="4" lineSpacing="6" color="0x000000FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="72" />
+      </Label>
+      <Label id="cardText" translation="[260,530]" width="1400" height="320" horizAlign="center" wrap="true" maxLines="4" lineSpacing="6" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="72" />
+      </Label>
+      <Label id="cardSub" translation="[60,860]" width="1800" height="180" horizAlign="center" wrap="true" maxLines="3" lineSpacing="8" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="34" />
+      </Label>
+    </Group>
+
+    <!-- small version of the card shown in the guide's preview window -->
+    <Group id="mini" translation="[40,28]" visible="false">
+      <Poster width="576" height="324" uri="pkg:/images/card_bg.png" />
+      <Group id="miniStatic" visible="false">
+        <Poster id="ms0" width="576" height="324" uri="pkg:/images/static0.png" opacity="0.9" />
+        <Poster id="ms1" width="576" height="324" uri="pkg:/images/static1.png" opacity="0.9" visible="false" />
+        <Poster id="ms2" width="576" height="324" uri="pkg:/images/static2.png" opacity="0.9" visible="false" />
+        <Poster id="ms3" width="576" height="324" uri="pkg:/images/static3.png" opacity="0.9" visible="false" />
+      </Group>
+      <Rectangle id="miniBox" translation="[40,122]" width="496" height="80" color="0x1C0A57DD" />
+      <Label id="miniText" translation="[20,40]" width="536" height="244" horizAlign="center" vertAlign="center" wrap="true" maxLines="4" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="28" />
+      </Label>
+    </Group>
+
+    <!-- guide preview text (right of the shrunken video) -->
+    <Group id="preview" visible="false">
+      <PixelLogo id="pLogo" translation="[660,40]" size="72" />
+      <Label id="pNum" translation="[752,30]" width="160" height="92" vertAlign="center" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large-compressed.ttf" size="76" />
+      </Label>
+      <Label id="pName" translation="[900,30]" width="980" height="92" vertAlign="center" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="48" />
+      </Label>
+      <Label id="pNow" translation="[660,130]" width="1220" height="52" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="36" />
+      </Label>
+      <Label id="pDesc" translation="[660,190]" width="1220" height="120" wrap="true" maxLines="3" color="0xD6DCFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000.ttf" size="28" />
+      </Label>
+      <Label id="pHint" translation="[660,320]" width="1220" height="34" color="0x8FFDFAFF">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="24" />
+      </Label>
+    </Group>
+
+    <!-- guide grid -->
+    <Group id="guide" translation="[0,380]" visible="false">
+      <Rectangle width="1920" height="4" color="0x2652B2FF" />
+      <Rectangle translation="[0,4]" width="1920" height="696" color="0x1C0A57FF" />
+      <Rectangle translation="[0,4]" width="1920" height="72" color="0x10063AFF" />
+      <Rectangle translation="[40,18]" width="44" height="44" color="0xFFFF00FF" />
+      <Label translation="[40,18]" width="44" height="44" horizAlign="center" vertAlign="center" text="S" color="0x10063AFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large-compressed.ttf" size="38" />
+      </Label>
+      <Label translation="[98,18]" width="200" height="44" vertAlign="center" text="SPELUNKR" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="32" />
+      </Label>
+      <Label translation="[300,22]" width="250" height="40" vertAlign="center" text="TV GUIDE" color="0xD6DCFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="20" />
+      </Label>
+      <Label translation="[624,18]" width="400" height="44" vertAlign="center" text="ON NOW" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="30" />
+      </Label>
+      <Label translation="[1304,18]" width="400" height="44" vertAlign="center" text="UP NEXT" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="30" />
+      </Label>
+      <Label id="gClock" translation="[1600,18]" width="280" height="44" horizAlign="right" vertAlign="center" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="32" />
+      </Label>
+      <Group id="rows" translation="[0,76]">
+        <GuideRow translation="[0,0]" />
+        <GuideRow translation="[0,94]" />
+        <GuideRow translation="[0,188]" />
+        <GuideRow translation="[0,282]" />
+        <GuideRow translation="[0,376]" />
+        <GuideRow translation="[0,470]" />
+      </Group>
+      <Rectangle translation="[0,640]" width="1920" height="64" color="0x10063AFF" />
+      <Label translation="[0,640]" width="1920" height="64" horizAlign="center" vertAlign="center" color="0xD6DCFFFF"
+        text="UP/DOWN  BROWSE        LEFT/RIGHT  PAGE        OK  TUNE IN        BACK  CLOSE">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="26" />
+      </Label>
+    </Group>
+
+    <!-- channel banner -->
+    <Group id="banner" translation="[96,700]" visible="false">
+      <Rectangle width="1728" height="316" color="0x10063AFF" />
+      <Rectangle translation="[4,4]" width="1720" height="308" color="0x2652B2FF" />
+      <Rectangle translation="[8,8]" width="1712" height="300" color="0x21285AF0" />
+      <Label id="bNum" translation="[40,22]" width="150" height="100" vertAlign="center" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large-compressed.ttf" size="92" />
+      </Label>
+      <PixelLogo id="bLogo" translation="[196,28]" size="88" />
+      <Label id="bName" translation="[308,22]" width="1000" height="100" vertAlign="center" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="52" />
+      </Label>
+      <Rectangle translation="[1330,52]" width="100" height="44" color="0xFF3030FF" />
+      <Label translation="[1330,52]" width="100" height="44" horizAlign="center" vertAlign="center" text="LIVE" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="28" />
+      </Label>
+      <Label id="bClock" translation="[1440,22]" width="250" height="100" horizAlign="right" vertAlign="center" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="38" />
+      </Label>
+      <Label translation="[40,140]" width="120" height="50" vertAlign="center" text="NOW" color="0x8FFDFAFF">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="30" />
+      </Label>
+      <Label id="bNow" translation="[168,136]" width="1180" height="58" vertAlign="center" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="42" />
+      </Label>
+      <Label id="bNowTime" translation="[1360,140]" width="330" height="50" horizAlign="right" vertAlign="center" color="0xD6DCFFFF">
+        <Font role="font" uri="pkg:/fonts/star4000.ttf" size="34" />
+      </Label>
+      <Rectangle translation="[168,204]" width="1522" height="14" color="0x2652B2FF" />
+      <Rectangle translation="[170,206]" width="1518" height="10" color="0x10063AFF" />
+      <Rectangle id="bProgress" translation="[170,206]" width="0" height="10" color="0xFFFF00FF" />
+      <Label translation="[40,232]" width="120" height="50" vertAlign="center" text="NEXT" color="0x8FFDFAFF">
+        <Font role="font" uri="pkg:/fonts/star3000-heavy.ttf" size="30" />
+      </Label>
+      <Label id="bNext" translation="[168,230]" width="1180" height="54" vertAlign="center" color="0xA8A8FFFF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="34" />
+      </Label>
+      <Label id="bNextTime" translation="[1360,232]" width="330" height="50" horizAlign="right" vertAlign="center" color="0xA8A8FFFF">
+        <Font role="font" uri="pkg:/fonts/star4000.ttf" size="30" />
+      </Label>
+    </Group>
+
+    <!-- toast -->
+    <Group id="toast" visible="false">
+      <Rectangle id="toastBorder" translation="[360,56]" width="1200" height="84" color="0xFFFF00FF" />
+      <Rectangle id="toastBox" translation="[364,60]" width="1192" height="76" color="0x10063AF2" />
+      <Label id="toastText" translation="[364,60]" width="1192" height="76" horizAlign="center" vertAlign="center" color="0xFFFF00FF">
+        <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="34" />
+      </Label>
+    </Group>
+
+    <Timer id="tick" duration="0.2" repeat="true" />
+    <Timer id="staticTimer" duration="0.07" repeat="true" />
+    <Timer id="endTimer" repeat="false" />
+    <Timer id="bannerTimer" repeat="false" />
+    <Timer id="flipTimer" duration="0.45" repeat="false" />
+    <Timer id="toastTimer" repeat="false" />
+    <Timer id="retryTimer" repeat="false" />
+    <Timer id="watchdog" duration="5" repeat="true" />
+    <Timer id="slowTimer" duration="15" repeat="true" />
+  </children>
+</component>

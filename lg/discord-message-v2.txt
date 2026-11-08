@@ -1,0 +1,46 @@
+=== MESSAGE 1 (post first) ===
+
+Hey Spelunkr folks 👋
+
+Big fan. I made a little TV app so I could watch Spelunkr on my LG TV (and a Roku version) with nothing but the remote: up/down flips channels, OK opens a Prevue-style guide, left/right shows what's on and what's next. It uses your fonts, colors and logos, and plays the same lineup, bumps and "up next" cards in sync with the site. No ads, no accounts, no changes to the programming. Every tape still plays from the Internet Archive.
+
+It's a personal sideload and nobody else has it. It worked by reading your public lineup/manifest JSON from data.spelunkr.tv. Since the recent update those requests get a Cloudflare 403 unless they come from spelunkr.tv itself, so the TV app stopped working. For now I've switched the TV back to loading spelunkr.tv directly, which works fine, just with the busier desktop interface.
+
+I don't want to get around the block, so I'm asking: would you be up for allowing a TV app like this (an allowlisted origin, a key, whatever suits you)? Or, if you'd rather do official LG/Roku apps, I'm happy to hand over the code. It's small, and the Roku version is checked against your schedule engine so the lineup matches the site exactly.
+
+Either way, thanks for building the weirdest cable company on the internet. Technical details below 👇
+
+
+=== MESSAGE 2 (technical details) ===
+
+```
+WHAT CHANGED (tested 2026-11-08 21:46 UTC)
+GET https://data.spelunkr.tv/lineup.json
+  no Origin            -> 403 Cloudflare "Sorry, you have been blocked"  CF-RAY a577c4ff2f241668-SJC
+  Origin: null         -> 403                                          CF-RAY a577c504182a752a-SEA
+  Origin: spelunkr.tv  -> 200 application/json                         CF-RAY a577c509fa79495d-SEA
+GET /manifests/primetime/v21.json
+  no Origin            -> 403                                          CF-RAY a577c501cd531686-SJC
+  Origin: null         -> 403                                          CF-RAY a577c5078f5a2344-SJC
+Still fine: audio.spelunkr.tv/bumps/* (206), spelunkr.tv/fonts/* (200), archive.org video
+Same 403 for any User-Agent, incl. the TV's own:
+  Mozilla/5.0 (Web0S; Linux/SmartTV) ... Chrome/94.0.4606.128
+
+THE CLIENTS
+LG webOS 23 packaged app (file:// origin, so requests go out with Origin: null)
+  + Roku SceneGraph channel (roUrlTransfer, no Origin header)
+Your schedule engine is reused as-is: on LG it's extracted from your bundle,
+on Roku it's a BrightScript port that matched your engine on 4,320/4,320
+entries across 36 channels
+
+TRAFFIC PER TV
+lineup.json         every 2 min (~58 KB)
+manifests/platform  once per published version, then cached
+                    (~32 manifests + 4 platform files on first launch, ~4-5 MB)
+spelunkr.tv/?_clock HEAD x3 at launch + every 30 min (clock-skew check, LG only)
+audio.spelunkr.tv   bump/sting mp3s while a break is on screen
+Video and thumbnails come straight from archive.org (nothing proxied)
+
+Happy to change any of this: fewer lineup polls, a custom User-Agent
+("SpelunkrTV/2.0 (+contact)"), an API key header, a separate host, whatever works for you.
+```

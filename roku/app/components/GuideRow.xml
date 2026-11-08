@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- One row of the TV guide -->
+<component name="GuideRow" extends="Group">
+  <interface>
+    <field id="data" type="assocarray" onChange="render" />
+    <field id="selected" type="boolean" onChange="render" />
+    <field id="odd" type="boolean" onChange="render" />
+  </interface>
+  <children>
+    <Rectangle id="bg" width="1920" height="94" color="0x21285AFF" />
+    <Rectangle id="sep" translation="[0,91]" width="1920" height="3" color="0x10063AFF" />
+    <Rectangle id="div1" translation="[597,0]" width="3" height="94" color="0x10063AFF" />
+    <Rectangle id="div2" translation="[1277,0]" width="3" height="94" color="0x10063AFF" />
+    <Label id="num" translation="[40,10]" width="96" height="74" vertAlign="center" color="0xFFFF00FF">
+      <Font role="font" uri="pkg:/fonts/star4000-large-compressed.ttf" size="60" />
+    </Label>
+    <PixelLogo id="logo" translation="[146,19]" size="56" />
+    <Label id="name" translation="[220,10]" width="370" height="74" vertAlign="center" color="0xFFFF00FF">
+      <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="30" />
+    </Label>
+    <Label id="nowT" translation="[624,12]" width="630" height="42" color="0xFFFFFFFF">
+      <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="30" />
+    </Label>
+    <Label id="nowM" translation="[624,52]" width="630" height="30" color="0xA8A8FFFF">
+      <Font role="font" uri="pkg:/fonts/star4000.ttf" size="24" />
+    </Label>
+    <Label id="nxtT" translation="[1304,12]" width="590" height="42" color="0xD6DCFFFF">
+      <Font role="font" uri="pkg:/fonts/star4000-large.ttf" size="30" />
+    </Label>
+    <Label id="nxtM" translation="[1304,52]" width="590" height="30" color="0xA8A8FFFF">
+      <Font role="font" uri="pkg:/fonts/star4000.ttf" size="24" />
+    </Label>
+    <Rectangle id="playing" translation="[0,0]" width="14" height="91" color="0xFF3030FF" visible="false" />
+    <!-- selection frame -->
+    <Group id="sel" visible="false">
+      <Rectangle width="1920" height="6" color="0xFFFF00FF" />
+      <Rectangle translation="[0,85]" width="1920" height="6" color="0xFFFF00FF" />
+      <Rectangle width="6" height="91" color="0xFFFF00FF" />
+      <Rectangle translation="[1914,0]" width="6" height="91" color="0xFFFF00FF" />
+    </Group>
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/GuideRow.brs" />
+</component>

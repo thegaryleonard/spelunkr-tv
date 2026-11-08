@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Draws a Spelunkr pixel logomark: logo = {n, rects:[{x,y,w,h,c}]}, size = px -->
+<component name="PixelLogo" extends="Group">
+  <interface>
+    <field id="logo" type="assocarray" onChange="redraw" />
+    <field id="size" type="float" value="64" onChange="redraw" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/PixelLogo.brs" />
+</component>

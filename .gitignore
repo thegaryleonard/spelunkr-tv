@@ -1,0 +1,23 @@
+# deps / generated
+node_modules/
+out/
+*.ipk
+*.log
+lg/research/
+lg/build/engine.raw.js
+lg/build/engine.pretty.js
+
+# Spelunkr's own data and code snapshots (regenerate with roku/test/snapshot.mjs)
+roku/test/fixtures/
+roku/test/*.txt
+roku/test/times.json
+
+# simulator / test scratch
+roku/tools/.node-xhr-sync-*
+roku/tools/sim.log
+roku/app/config.json
+
+# secrets never belong here
+.env
+*.pem
+*_webos

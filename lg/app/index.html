@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spelunkr</title>
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <video id="video" playsinline preload="auto"></video>
+  <audio id="audio" preload="auto"></audio>
+
+  <!-- full-screen cards: tuning static, bumps, up next, no signal -->
+  <div id="card" class="card hidden">
+    <canvas id="static" width="192" height="108"></canvas>
+    <div class="card-body">
+      <div id="card-logo" class="card-logo"></div>
+      <div id="card-kicker" class="card-kicker"></div>
+      <div id="card-text" class="card-text"></div>
+      <div id="card-sub" class="card-sub"></div>
+    </div>
+  </div>
+
+  <!-- channel banner (on tune / left-right) -->
+  <div id="banner" class="banner hidden">
+    <div class="banner-top">
+      <span id="b-num" class="b-num"></span>
+      <span id="b-logo" class="b-logo"></span>
+      <span id="b-name" class="b-name"></span>
+      <span class="b-live">LIVE</span>
+      <span id="b-clock" class="b-clock"></span>
+    </div>
+    <div class="banner-row">
+      <span class="b-label">NOW</span>
+      <span id="b-now" class="b-title"></span>
+      <span id="b-now-time" class="b-time"></span>
+    </div>
+    <div class="b-bar"><div id="b-progress" class="b-progress"></div></div>
+    <div class="banner-row dim">
+      <span class="b-label">NEXT</span>
+      <span id="b-next" class="b-title"></span>
+      <span id="b-next-time" class="b-time"></span>
+    </div>
+  </div>
+
+  <!-- guide -->
+  <div id="guide" class="guide hidden">
+    <div id="g-preview" class="g-preview"></div>
+    <div class="g-head">
+      <span class="g-brand"><span class="g-s">S</span>SPELUNKR <small>TV GUIDE</small></span>
+      <span class="g-col-now">ON NOW</span>
+      <span class="g-col-next">UP NEXT</span>
+      <span id="g-clock" class="g-clock"></span>
+    </div>
+    <div id="g-rows" class="g-rows"></div>
+    <div class="g-foot">
+      <span><b class="sym">▲▼</b> BROWSE</span><span><b class="sym">◀▶</b> PAGE</span><span><b>OK</b> TUNE IN</span><span><b>BACK</b> CLOSE</span>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
