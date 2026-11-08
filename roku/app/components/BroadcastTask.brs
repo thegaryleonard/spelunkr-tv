@@ -19,12 +19,20 @@ function http(url as string, timeoutMs = 15000 as integer) as dynamic
   ut.EnableEncodings(true)
   ut.RetainBodyOnError(false)
   ut.SetUrl(url)
+  ' data.spelunkr.tv admits clients that name themselves (agreed with the Spelunkr devs)
+  ut.AddHeader("User-Agent", m.userAgent)
+  if m.viaProxy = true then ut.AddHeader("X-Client", m.userAgent)   ' simulator: its XHR can't set User-Agent
   port = CreateObject("roMessagePort")
   ut.SetMessagePort(port)
   if not ut.AsyncGetToString() then return invalid
   msg = wait(timeoutMs, port)
   if type(msg) = "roUrlEvent" then
-    if msg.GetResponseCode() = 200 then return msg.GetString()
+    if msg.GetResponseCode() = 200 then
+      hd = msg.GetResponseHeaders()
+      m.lastDate = invalid
+      if hd <> invalid then m.lastDate = hd["date"]
+      return msg.GetString()
+    end if
     print "[spelunkr] HTTP "; msg.GetResponseCode(); " "; url; " "; msg.GetFailureReason()
     return invalid
   end if
@@ -35,12 +43,11 @@ end function
 
 function getJson(path as string) as dynamic
   ' manifests/platform files are immutable (versioned) -> cache their text
-  if path <> "lineup.json" and m.textCache.DoesExist(path) then return ParseJson(m.textCache[path])
-  url = m.dataBase + path
-  if path = "lineup.json" then url = url + "?t=" + nowMs().ToStr()
-  txt = http(url)
+  fresh = (path = "lineup.json" or path = "live.json")
+  if not fresh and m.textCache.DoesExist(path) then return ParseJson(m.textCache[path])
+  txt = http(m.dataBase + path)
   if txt = invalid then return invalid
-  if path <> "lineup.json" then m.textCache[path] = txt
+  if not fresh then m.textCache[path] = txt
   return ParseJson(txt)
 end function
 
@@ -61,6 +68,17 @@ function loadLineup() as boolean
   if L = invalid or L.channels = invalid then return false
   if L.audioBase <> invalid then m.audioBase = L.audioBase
   if m.forceAudioBase <> invalid then m.audioBase = m.forceAudioBase
+  ' remember which versions we have, to compare with live.json
+  sum& = 0
+  for each c in L.channels
+    mx& = 0
+    for each p in spArr(c.versions)
+      m.knownVersions[c.id + ":" + spLong(p.v).ToStr()] = true
+      if spLong(p.v) > mx& then mx& = spLong(p.v)
+    end for
+    sum& = sum& + mx&
+  end for
+  m.knownSum = sum&
   list = []
   for each c in L.channels
     ok = (not spIsTrue(c.debugOnly)) and (not spIsTrue(c.comingSoon)) and c.versions <> invalid
@@ -422,6 +440,69 @@ sub answerGuide()
   m.top.guide = { at: t, rows: rows }
 end sub
 
+' ------------------------------------------------------------------ live.json heartbeat
+' Polled once a minute. lineup.json (and new manifests) are fetched only when it shows a new version.
+' Its HTTP Date header also keeps our clock honest (replaces the old spelunkr.tv clock checks).
+sub pollLive()
+  sent& = nowMs()
+  live = getJson("live.json")
+  if live = invalid then return
+  got& = nowMs()
+  clockFromLive(m.lastDate, live.written, sent&, got&)
+  changed = false
+  if live.publicVersionSum <> invalid and m.knownSum <> invalid then
+    if spLong(live.publicVersionSum) <> m.knownSum then changed = true
+  end if
+  if live.latest <> invalid and live.latest.channel_id <> invalid then
+    if not m.knownVersions.DoesExist(live.latest.channel_id + ":" + spLong(live.latest.version).ToStr()) then changed = true
+  end if
+  for each v in spArr(live.versions)
+    if v <> invalid and v.channel_id <> invalid then
+      if not m.knownVersions.DoesExist(v.channel_id + ":" + spLong(v.version).ToStr()) then changed = true
+    end if
+  end for
+  if changed then
+    if loadLineup() then m.bgIndex = 0
+  end if
+end sub
+
+sub clockFromLive(httpDate as dynamic, written as dynamic, sent as longinteger, got as longinteger)
+  if m.fixedClock = true then return   ' simulator test with a forced clock
+  local& = sent + (got - sent) \ 2 - m.clockOffset   ' device clock at mid-request
+  if httpDate <> invalid then
+    d = CreateObject("roDateTime")
+    d.FromISO8601String(httpToIso(httpDate))
+    srv& = d.AsSeconds() * 1000& + 500
+    if srv& > 1000000000000& then
+      s& = srv& - local&
+      if s& > 1500 or s& < -1500 then m.clockOffset = s& else m.clockOffset = 0&
+      m.top.clockOffset = m.clockOffset
+      return
+    end if
+  end if
+  if written <> invalid then
+    d = CreateObject("roDateTime")
+    d.FromISO8601String(written)
+    w& = d.AsSeconds() * 1000&
+    if w& > 1000000000000& and local& + m.clockOffset < w& - 2000 then
+      m.clockOffset = w& - local&
+      m.top.clockOffset = m.clockOffset
+    end if
+  end if
+end sub
+
+' "Sun, 08 Nov 2026 22:37:20 GMT" -> "2026-11-08T22:37:20Z"
+function httpToIso(h as string) as string
+  months = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" }
+  p = h.Trim().Split(" ")
+  if p.Count() < 5 then return ""
+  mo = months[p[2]]
+  if mo = invalid then return ""
+  dd = p[1]
+  if Len(dd) = 1 then dd = "0" + dd
+  return p[3] + "-" + mo + "-" + dd + "T" + p[4] + "Z"
+end function
+
 ' ------------------------------------------------------------------ main loop
 sub taskMain()
   print "[spelunkr] task start"
@@ -433,15 +514,27 @@ sub taskMain()
   m.channels = []
   m.audioBase = "https://audio.spelunkr.tv/bumps/"
   m.dataBase = "https://data.spelunkr.tv/"
+  m.userAgent = "spelunkr-roku/" + CreateObject("roAppInfo").GetVersion()
+  m.knownVersions = {}
+  m.knownVersions.SetModeCaseSensitive()
+  m.knownSum = invalid
+  m.lastDate = invalid
+  m.fixedClock = false
+  m.viaProxy = false
+  if m.clockOffset = invalid then m.clockOffset = 0&
   ' optional pkg:/config.json (used for simulator builds that need a CORS proxy)
   cfgTxt = ""
   if CreateObject("roFileSystem").Exists("pkg:/config.json") then cfgTxt = ReadAsciiFile("pkg:/config.json")
   if cfgTxt <> "" then
     cfg = ParseJson(cfgTxt)
-    if cfg <> invalid and cfg.dataBase <> invalid then m.dataBase = cfg.dataBase
+    if cfg <> invalid and cfg.dataBase <> invalid then
+      m.dataBase = cfg.dataBase
+      m.viaProxy = true
+    end if
     if cfg <> invalid and cfg.audioBase <> invalid then m.forceAudioBase = cfg.audioBase
     if cfg <> invalid and cfg.clockOffsetMs <> invalid then
       m.clockOffset = spLong(cfg.clockOffsetMs)
+      m.fixedClock = true
       m.top.clockOffset = m.clockOffset
     end if
   end if
@@ -453,8 +546,9 @@ sub taskMain()
     wait(10000, port)
   end while
   m.top.status = "ready"
-  lastLineup = nowMs()
-  bgIndex = 0
+  pollLive()
+  lastLive = nowMs()
+  m.bgIndex = 0
   guideDirty = false
   while true
     msg = wait(250, port)
@@ -463,21 +557,21 @@ sub taskMain()
       if cmd <> invalid and cmd.type = "now" then answerNow(cmd)
       if cmd <> invalid and cmd.type = "guide" then answerGuide()
     else
-      ' idle: build one more channel's schedule in the background, refresh the lineup every 2 min
-      if bgIndex < m.channels.Count() then
-        ch = m.channels[bgIndex]
+      ' idle: build one more channel's schedule in the background; heartbeat once a minute
+      if m.bgIndex < m.channels.Count() then
+        ch = m.channels[m.bgIndex]
         if ch.playlist = invalid then
           if ensurePlaylist(ch) then nowNext(ch, nowMs())   ' warm the schedule maths too
           guideDirty = true
         end if
-        bgIndex = bgIndex + 1
+        m.bgIndex = m.bgIndex + 1
       else if guideDirty then
         guideDirty = false
         answerGuide()
       end if
-      if nowMs() - lastLineup > 120000 then
-        lastLineup = nowMs()
-        if loadLineup() then bgIndex = 0
+      if nowMs() - lastLive > 60000 then
+        lastLive = nowMs()
+        pollLive()
       end if
     end if
   end while

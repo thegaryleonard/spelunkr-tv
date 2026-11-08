@@ -1,8 +1,8 @@
 /* Spelunkr for webOS — 10-foot UI in the site's "8s" Weather-Star look. Screen is 1920x1080 CSS px. */
-@font-face { font-family: "Star4000"; src: url(https://spelunkr.tv/fonts/star4000/star4000.woff2) format("woff2"); font-display: swap; }
-@font-face { font-family: "Star4000 Large"; src: url(https://spelunkr.tv/fonts/star4000/star4000-large.woff2) format("woff2"); font-display: swap; }
-@font-face { font-family: "Star4000 Large Compressed"; src: url(https://spelunkr.tv/fonts/star4000/star4000-large-compressed.woff2) format("woff2"); font-display: swap; }
-@font-face { font-family: "Star3000 Heavy"; src: url(https://spelunkr.tv/fonts/star4000/star3000-heavy.woff2) format("woff2"); font-display: swap; }
+@font-face { font-family: "Star4000"; src: url(../fonts/star4000.ttf) format("truetype"); font-display: swap; }
+@font-face { font-family: "Star4000 Large"; src: url(../fonts/star4000-large.ttf) format("truetype"); font-display: swap; }
+@font-face { font-family: "Star4000 Large Compressed"; src: url(../fonts/star4000-large-compressed.ttf) format("truetype"); font-display: swap; }
+@font-face { font-family: "Star3000 Heavy"; src: url(../fonts/star3000-heavy.ttf) format("truetype"); font-display: swap; }
 
 :root {
   --bg: #1C0A57; --panel: #21285A; --panel-hi: #2a3a8c; --border: #2652B2;

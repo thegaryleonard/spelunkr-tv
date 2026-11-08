@@ -1,0 +1,7 @@
+{
+  "name": "tv.spelunkr.app.service",
+  "version": "2.2.0",
+  "description": "Fetches Spelunkr schedule data for the TV app with an identifying User-Agent",
+  "main": "service.js",
+  "license": "MIT"
+}

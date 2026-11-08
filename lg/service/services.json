@@ -1,0 +1,5 @@
+{
+  "id": "tv.spelunkr.app.service",
+  "description": "Spelunkr data fetcher",
+  "services": [{ "name": "tv.spelunkr.app.service" }]
+}

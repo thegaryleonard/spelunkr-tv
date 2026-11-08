@@ -8,40 +8,74 @@
   var $ = function (id) { return document.getElementById(id); };
   var video = $('video'), audio = $('audio');
 
-  // ---------------------------------------------------------------- clock
+  // ---------------------------------------------------------------- data access
+  // All JSON comes from data.spelunkr.tv through the app's own webOS service (service/service.js),
+  // because the gate wants the client to name itself in its User-Agent ("spelunkr-lg/<ver>") and the
+  // web runtime can't set one. Agreed with the Spelunkr devs.
+  var SERVICE = 'luna://tv.spelunkr.app.service/get';
+  var bridges = [];   // keep bridges referenced until they answer
+  var stats = {};   // request counts per path (debug: window.__spelunkr.stats())
+  function luna(uri, params) {
+    if (params && params.path) stats[params.path] = (stats[params.path] || 0) + 1;
+    return new Promise(function (resolve, reject) {
+      var b = new PalmServiceBridge(), done = false;
+      bridges.push(b);
+      var t = setTimeout(function () { finish(null, new Error('service timeout')); }, 20000);
+      function finish(r, err) {
+        if (done) return;
+        done = true; clearTimeout(t);
+        bridges.splice(bridges.indexOf(b), 1);
+        if (err) reject(err); else resolve(r);
+      }
+      b.onservicecallback = function (msg) {
+        var r; try { r = JSON.parse(msg); } catch (e) { return finish(null, e); }
+        if (r.returnValue === false) finish(null, new Error(r.errorText || 'service error'));
+        else finish(r);
+      };
+      b.call(uri, JSON.stringify(params || {}));
+    });
+  }
+  var jsonCache = {};   // manifests/platform files are immutable per version
+  function getJSON(path, fresh) {
+    if (!fresh && jsonCache[path]) return Promise.resolve(JSON.parse(jsonCache[path]));
+    return luna(SERVICE, { path: path }).then(function (r) {
+      if (r.status !== 200) throw new Error('HTTP ' + r.status + ' ' + path);
+      if (!fresh) jsonCache[path] = r.body;
+      return JSON.parse(r.body);
+    });
+  }
+
+  // ---------------------------------------------------------------- clock (from live.json, no extra requests)
   var skew = 0;
   function nowMs() { return Date.now() + skew; }
-  function syncClock() {
-    var samples = [], i = 0;
-    function one() {
-      var t0 = Date.now();
-      return fetch('https://spelunkr.tv/?_clock=' + t0, { cache: 'no-store', method: 'HEAD' }).then(function (r) {
-        var t1 = Date.now(), d = Date.parse(r.headers.get('date'));
-        if (isFinite(d)) samples.push({ rtt: t1 - t0, skew: d - (t0 + (t1 - t0) / 2) });
-      });
-    }
-    function loop() { return i++ < 3 ? one().then(loop) : null; }
-    return loop().then(function () {
-      if (!samples.length) return;
-      samples.sort(function (a, b) { return a.rtt - b.rtt; });
+  function clockFromLive(httpDate, written, sentAt, gotAt) {
+    var mid = sentAt + (gotAt - sentAt) / 2;
+    var d = Date.parse(httpDate || '');
+    if (isFinite(d)) {
       // Date header has 1 s resolution: only correct clocks that are clearly off.
-      var s = samples[0].skew;
-      skew = Math.abs(s) > 1500 ? s + 500 : 0;
-    }).catch(function () {});
+      var s = d + 500 - mid;
+      skew = Math.abs(s) > 1500 ? s : 0;
+      return;
+    }
+    var w = Date.parse(written || '');
+    if (isFinite(w) && mid + skew < w - 2000) skew = w - mid;   // we're behind a file that already exists
   }
 
   // ---------------------------------------------------------------- data
   var audioBase = 'https://audio.spelunkr.tv/bumps/';
   var channels = [];
-  function getJSON(path, fresh) {
-    return fetch(DATA + path, fresh ? { cache: 'no-store' } : {}).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + path);
-      return r.json();
-    });
-  }
+  var knownSum = null;          // sum of the newest version of every lineup channel (= live.json publicVersionSum)
+  var knownVersions = {};       // "channel:v" -> 1
   function loadLineup() {
     return getJSON('lineup.json', true).then(function (L) {
       if (L.audioBase) audioBase = L.audioBase;
+      var sum = 0;
+      (L.channels || []).forEach(function (c) {
+        var mx = 0;
+        (c.versions || []).forEach(function (p) { knownVersions[c.id + ':' + p.v] = 1; if (p.v > mx) mx = p.v; });
+        sum += mx;
+      });
+      knownSum = sum;
       var byId = {};
       channels.forEach(function (c) { byId[c.id] = c; });
       var list = [];
@@ -96,6 +130,21 @@
       buildVersion(p).then(function (v) { E.addVersion(ch.playlist, v); }).catch(function () {});
     });
   }
+  // live.json heartbeat: once a minute; lineup.json + new manifests only when it shows a new version
+  function pollLive() {
+    var sent = Date.now();
+    return luna(SERVICE, { path: 'live.json' }).then(function (r) {
+      if (r.status !== 200) throw new Error('HTTP ' + r.status + ' live.json');
+      var live = JSON.parse(r.body);
+      clockFromLive(r.date, live.written, sent, Date.now());
+      var changed = false;
+      if (typeof live.publicVersionSum === 'number' && knownSum !== null && live.publicVersionSum !== knownSum) changed = true;
+      if (live.latest && live.latest.channel_id && !knownVersions[live.latest.channel_id + ':' + live.latest.version]) changed = true;
+      (live.versions || []).forEach(function (v) { if (v && v.channel_id && !knownVersions[v.channel_id + ':' + v.version]) changed = true; });
+      if (changed) return loadLineup();
+    }).catch(function () {});
+  }
+
   // current + next *show* (skips bumps / up-next cards / ads)
   function nowNext(ch, t) {
     if (!ch.playlist) return null;
@@ -397,7 +446,7 @@
     var nn = ch.playlist ? nowNext(ch, nowMs()) : null;
     p.innerHTML = '<div class="p-head">' + logo(ch, 72) + '<span class="p-num">' + num(ch) + '</span><span class="p-name">' + esc(ch.name) + '</span></div>' +
       '<div class="p-now">' + (nn && nn.now ? esc(withYear(nn.now.item)) : '') + '</div>' +
-      '<div class="p-desc">' + esc(ch.description) + '</div>' +
+      '<div class="p-desc">' + esc(String(ch.description || '').replace(/\s*[\u2012-\u2015]\s*/g, ' - ')) + '</div>' +
       (ch === cur ? '<div class="p-hint">NOW WATCHING</div>' : '<div class="p-hint">PRESS OK TO TUNE IN</div>');
   }
 
@@ -457,11 +506,10 @@
   // ---------------------------------------------------------------- lifecycle
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { clearTimers(); stopVideo(); stopAudio(); }
-    else if (cur) { syncClock(); tune(cur); }
+    else if (cur) { pollLive(); tune(cur); }
   });
   setInterval(function () { if (bannerShown()) renderBanner(); if (guideOpen()) renderGuide(); }, 15000);
-  setInterval(function () { if (!document.hidden) loadLineup().catch(function () {}); }, 120000);
-  setInterval(syncClock, 30 * 60000);
+  setInterval(function () { if (!document.hidden) pollLive(); }, 60000);
 
   function preloadAll() {
     var q = channels.slice();
@@ -471,7 +519,7 @@
 
   function start() {
     setCard({ static: true, text: 'ADJUSTING THE ANTENNA…' });
-    Promise.all([syncClock(), loadLineup()]).then(function () {
+    Promise.all([pollLive(), loadLineup()]).then(function () {
       if (!channels.length) throw new Error('empty lineup');
       var last = null;
       try { last = localStorage.getItem('spelunkr-tv-last'); } catch (e) {}
@@ -484,6 +532,6 @@
       setTimeout(start, 10000);
     });
   }
-  window.__spelunkr = { skew: function (ms) { skew = ms; }, channels: function () { return channels; }, cur: function () { return cur; }, entry: function () { return entry; }, tune: tune };
+  window.__spelunkr = { stats: function () { return { requests: stats, skewMs: skew, knownSum: knownSum }; }, skew: function (ms) { skew = ms; }, channels: function () { return channels; }, cur: function () { return cur; }, entry: function () { return entry; }, tune: tune };
   start();
 })();

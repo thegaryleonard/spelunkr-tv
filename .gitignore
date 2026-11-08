@@ -21,3 +21,5 @@ roku/app/config.json
 .env
 *.pem
 *_webos
+lg/build/engine.node.mjs
+roku/tools/proxy.log
