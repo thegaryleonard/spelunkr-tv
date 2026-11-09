@@ -3,7 +3,9 @@
 Remote-friendly TV apps for [spelunkr.tv](https://spelunkr.tv), the free cable network made of
 Internet Archive tapes. Unofficial.
 
-Controls: **▲▼** change channel · **OK** guide (in the guide, **◀▶** pages through channels) · **◀▶** shows what's on; press again to scroll through later shows (LG; Roku shows now/next only) · **Back** close, twice to exit.
+Controls: **▲▼** change channel · **OK** guide (in the guide, **◀▶** pages through channels) · **◀▶** shows what's on; press again to scroll through later shows · **hold OK** subtitles on/off (also the CC row at the top of the guide) · **Back** close, twice to exit. Roku: now/next only, no subtitles yet.
+
+Subtitles come from Spelunkr's own subtitle index (`lineup.json` → `subtitles/index-*.json`), so they exist only for the tapes the site subtitles: today 337 tapes (~115 h), English translations of the Japanese channels (WAKU WAKU, ROCKET PUNCH, OVATV), mostly machine-made.
 
 | Folder | Platform | Status |
 |---|---|---|

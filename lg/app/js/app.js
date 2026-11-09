@@ -69,6 +69,7 @@
   function loadLineup() {
     return getJSON('lineup.json', true).then(function (L) {
       if (L.audioBase) audioBase = L.audioBase;
+      setSubIndex(L.subtitles);
       var sum = 0;
       (L.channels || []).forEach(function (c) {
         var mx = 0;
@@ -265,6 +266,7 @@
     var n;
     try { n = E.nowAt(cur.playlist, nowMs()); } catch (e) { setCard({ text: 'NO SIGNAL' }); return; }
     entry = n;
+    syncSubs(n);
     if (n.item.type === 'video' || n.item.type === 'ad') playMedia(my, n); else playCard(my, n);
     timer = setTimeout(function () { play(my); }, Math.max(250, n.endMs - nowMs() + 30));
     if (bannerShown()) renderBanner();
@@ -398,11 +400,12 @@
   function bannerShown() { return !banner.classList.contains('hidden'); }
   function showBanner(ms) {
     banner.classList.remove('hidden');
+    document.body.classList.add('banner-up');
     renderBanner();
     clearTimeout(bannerTimer);
     bannerTimer = setTimeout(hideBanner, ms || 6000);
   }
-  function hideBanner() { banner.classList.add('hidden'); clearTimeout(bannerTimer); peek = 0; }
+  function hideBanner() { banner.classList.add('hidden'); document.body.classList.remove('banner-up'); clearTimeout(bannerTimer); peek = 0; }
   // ◀▶ while the banner is up: step the NEXT line through later shows
   function stepPeek(d) {
     var p = Math.max(0, Math.min(PEEK_MAX, peek + d));
@@ -441,15 +444,17 @@
   function guideOpen() { return !guide.classList.contains('hidden'); }
   function openGuide() {
     hideBanner();
-    sel = Math.max(0, channels.indexOf(cur));
-    top = Math.max(0, Math.min(sel - 2, channels.length - VISIBLE));
+    sel = Math.max(0, channels.indexOf(cur)) + 1;
+    top = Math.max(0, Math.min(sel - 2, channels.length + 1 - VISIBLE));
     guide.classList.remove('hidden');
     document.body.classList.add('guide-open');
     renderGuide();
   }
   function closeGuide() { guide.classList.add('hidden'); document.body.classList.remove('guide-open'); }
+  // guide rows: 0 = the CC (subtitles) switch, 1..N = channels
   function moveSel(d) {
-    sel = (sel + d + channels.length) % channels.length;
+    var n = channels.length + 1;
+    sel = (sel + d + n) % n;
     if (sel < top) top = sel;
     if (sel >= top + VISIBLE) top = sel - VISIBLE + 1;
     renderGuide();
@@ -457,29 +462,128 @@
   function renderGuide() {
     var t = nowMs(), html = '';
     $('g-clock').textContent = clock(t);
-    for (var i = top; i < Math.min(channels.length, top + VISIBLE); i++) {
-      var ch = channels[i], nn = ch.playlist ? nowNext(ch, t) : null;
+    for (var i = top; i < Math.min(channels.length + 1, top + VISIBLE); i++) {
+      if (i === 0) {
+        html += '<div class="g-row g-cc' + (sel === 0 ? ' sel' : '') + '"><div class="g-ch"><span class="cc-mark">CC</span><span class="g-name">SUBTITLES</span></div>' +
+          '<div class="g-cell now"><div class="g-t">' + (ccOn ? 'ON' : 'OFF') + '</div><div class="g-m">' + (sel === 0 ? 'PRESS OK TO TURN ' + (ccOn ? 'OFF' : 'ON') : 'FOR TAPES THAT HAVE THEM') + '</div></div>' +
+          '<div class="g-cell next"><div class="g-t"></div><div class="g-m">TIP: HOLD OK WHILE WATCHING</div></div></div>';
+        continue;
+      }
+      var ch = channels[i - 1], nn = ch.playlist ? nowNext(ch, t) : null;
       if (!ch.playlist) ensurePlaylist(ch).then(function () { if (guideOpen()) renderGuide(); }, function () {});
       var nowT = nn && nn.now ? esc(title(nn.now.item)) : 'ADJUSTING THE ANTENNA…';
       var nowM = nn && nn.now ? (nn.now.startMs > t ? 'STARTS ' + clock(nn.now.startMs) : dur((nn.now.endMs - t) / 1000) + ' LEFT' + (nn.now.item.year ? ' · ' + esc(nn.now.item.year) : '')) : '';
       var nxT = nn && nn.next ? esc(title(nn.next.item)) : '';
       var nxM = nn && nn.next ? clock(nn.next.startMs) : '';
+      var hasCC = nn && nn.now && subInfo(nn.now.item);
       html += '<div class="g-row' + (i === sel ? ' sel' : '') + (ch === cur ? ' playing' : '') + '">' +
         '<div class="g-ch"><span class="g-num">' + num(ch) + '</span>' + logo(ch, 56) + '<span class="g-name">' + esc(ch.name) + '</span></div>' +
-        '<div class="g-cell now"><div class="g-t">' + nowT + '</div><div class="g-m">' + nowM + '</div></div>' +
+        '<div class="g-cell now"><div class="g-t">' + nowT + '</div><div class="g-m">' + nowM + (hasCC ? ' <span class="cc-tag">CC</span>' : '') + '</div></div>' +
         '<div class="g-cell next"><div class="g-t">' + nxT + '</div><div class="g-m">' + nxM + '</div></div></div>';
     }
     rowsEl.innerHTML = html;
     renderPreview();
   }
   function renderPreview() {
-    var ch = channels[sel], p = $('g-preview');
+    var p = $('g-preview');
+    if (p && sel === 0) {
+      p.innerHTML = '<div class="p-head"><span class="cc-mark big">CC</span><span class="p-name">SUBTITLES ' + (ccOn ? 'ON' : 'OFF') + '</span></div>' +
+        '<div class="p-desc">English subtitles for tapes that have them, mostly on the Japanese channels. Many are made by machine, so expect the odd mistake.</div>' +
+        '<div class="p-hint">OK: TURN ' + (ccOn ? 'OFF' : 'ON') + ' · OR HOLD OK WHILE WATCHING</div>';
+      return;
+    }
+    var ch = channels[sel - 1];
     if (!p || !ch) return;
-    var nn = ch.playlist ? nowNext(ch, nowMs()) : null;
+    var nn = ch.playlist ? nowNext(ch, nowMs()) : null, si = nn && nn.now ? subInfo(nn.now.item) : null;
     p.innerHTML = '<div class="p-head">' + logo(ch, 72) + '<span class="p-num">' + num(ch) + '</span><span class="p-name">' + esc(ch.name) + '</span></div>' +
-      '<div class="p-now">' + (nn && nn.now ? esc(withYear(nn.now.item)) : '') + '</div>' +
+      '<div class="p-now">' + (nn && nn.now ? esc(withYear(nn.now.item)) : '') + (si ? ' <span class="cc-tag">' + (si.source === 'machine' ? 'CC BY MACHINE' : 'CC') + '</span>' : '') + '</div>' +
       '<div class="p-desc">' + esc(String(ch.description || '').replace(/\s*[\u2012-\u2015]\s*/g, ' - ')) + '</div>' +
       (ch === cur ? '<div class="p-hint">NOW WATCHING</div>' : '<div class="p-hint">PRESS OK TO TUNE IN</div>');
+  }
+
+  // ---------------------------------------------------------------- subtitles (CC)
+  // Spelunkr publishes English subtitles for some tapes (mostly its Japanese channels): lineup.json names an
+  // index (subtitles/index-<hash>.json) mapping tape keys to cue files. Same format and rules as the site.
+  var SUB_INDEX_RE = /^subtitles\/index-[0-9a-f]{16}\.json$/, SUB_FILE_RE = /^subtitles\/[0-9a-f]{16}\.json$/;
+  var subIndexPath = null, subTapes = null, subLoading = null, subFiles = {};
+  var ccOn = true;
+  try { ccOn = localStorage.getItem('spelunkr-tv-cc') !== 'off'; } catch (e) {}
+  var subsEl = $('subs'), subCues = null, subKey = null, subShown = null, subSource = null;
+
+  function setSubIndex(path) {
+    if (typeof path !== 'string' || !SUB_INDEX_RE.test(path) || path === subIndexPath) return;
+    subIndexPath = path;
+    subLoading = getJSON(path).then(function (j) {
+      var t = {}, tapes = j && j.format === 1 && j.tapes && typeof j.tapes === 'object' ? j.tapes : {};
+      Object.keys(tapes).forEach(function (k) {
+        var x = tapes[k];
+        if (k && x && SUB_FILE_RE.test(x.file) && (x.source === 'machine' || x.source === 'archive')) t[k] = { file: x.file, source: x.source };
+      });
+      if (path === subIndexPath) { subTapes = t; subKey = null; if (entry) syncSubs(entry); }
+    }).catch(function () {});
+  }
+  function tapeKey(item) {   // = the site's cn()
+    if (!item || !item.id) return null;
+    if (!item.file) return item.id;
+    var f = String(item.file).replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120);
+    return item.id + '/' + f;
+  }
+  function subInfo(item) { var k = tapeKey(item); return k && subTapes && subTapes[k] || null; }
+  function parseCues(j) {
+    var out = [];
+    if (!j || j.format !== 1 || !Array.isArray(j.cues)) return out;
+    j.cues.forEach(function (c) {
+      if (!c || !(c.t0 >= 0) || !(c.t1 > c.t0) || ['line', 'beat', 'mark'].indexOf(c.kind) < 0) return;
+      if (c.kind !== 'mark' && (typeof c.en !== 'string' || !c.en.trim() || c.en.length > 84)) return;
+      out.push({ t0: c.t0, t1: c.t1, kind: c.kind, en: c.kind === 'mark' ? '[…]' : c.en, spans: c.kind === 'line' && Array.isArray(c.spans) ? c.spans : null });
+    });
+    return out.sort(function (a, b) { return a.t0 - b.t0; });
+  }
+  function cueAt(cues, ms) {
+    var lo = 0, hi = cues.length - 1, best = -1;
+    while (lo <= hi) { var mid = (lo + hi) >> 1; if (cues[mid].t0 <= ms) { best = mid; lo = mid + 1; } else hi = mid - 1; }
+    return best >= 0 && ms < cues[best].t1 ? cues[best] : null;
+  }
+  function cueHtml(c) {
+    if (c.spans && c.spans.length && c.spans[0].at === 0) {
+      return c.spans.map(function (sp, i) {
+        var end = i + 1 < c.spans.length ? c.spans[i + 1].at : c.en.length, col = /^#[0-9a-fA-F]{6}$/.test(sp.color) ? sp.color : '#ffffff';
+        return '<span style="color:' + col + '">' + esc(c.en.slice(sp.at, end)) + '</span>';
+      }).join('');
+    }
+    return esc(c.en);
+  }
+  // called when a tape starts / the entry changes
+  function syncSubs(n) {
+    var item = n && (n.item.type === 'video' || n.item.type === 'ad') ? n.item : null;
+    var info = item ? subInfo(item) : null, key = info ? info.file : null;
+    $('cc-badge').classList.toggle('hidden', !(info && ccOn));
+    if (key === subKey) return;
+    subKey = key; subCues = null; subSource = info ? info.source : null; drawCue(null);
+    if (!info) return;
+    var load = subFiles[key] || (subFiles[key] = getJSON(key).then(parseCues));
+    load.then(function (cues) { if (subKey === key) subCues = cues; }, function () { delete subFiles[key]; });
+  }
+  function drawCue(c) {
+    if (c === subShown) return;
+    subShown = c;
+    if (!c) { subsEl.innerHTML = ''; return; }
+    subsEl.innerHTML = '<span class="sub-line sub-' + c.kind + '">' + cueHtml(c) + '</span>';
+  }
+  function tickSubs() {
+    if (!ccOn || !subCues || !subCues.length || video.paused && video.readyState < 2) drawCue(null);
+    else drawCue(cueAt(subCues, Math.round(video.currentTime * 1000)));
+  }
+  setInterval(tickSubs, 100);
+  function setCC(on, quiet) {
+    ccOn = on;
+    try { localStorage.setItem('spelunkr-tv-cc', on ? 'on' : 'off'); } catch (e) {}
+    $('cc-badge').classList.toggle('hidden', !(on && subKey));
+    tickSubs();
+    if (!quiet) {
+      var avail = entry && subInfo(entry.item);
+      toast(on ? (avail ? 'SUBTITLES ON' : 'SUBTITLES ON · NONE FOR THIS TAPE') : 'SUBTITLES OFF', 2500);
+    }
   }
 
   // ---------------------------------------------------------------- toast / exit
@@ -519,13 +623,21 @@
       else if (k === K.DOWN) moveSel(1);
       else if (k === K.LEFT) moveSel(-VISIBLE);
       else if (k === K.RIGHT) moveSel(VISIBLE);
-      else if (k === K.OK) { var ch = channels[sel]; closeGuide(); if (ch !== cur) tune(ch); else showBanner(); }
+      else if (k === K.OK) {
+        if (sel === 0) { setCC(!ccOn, true); renderGuide(); return; }
+        var ch = channels[sel - 1]; closeGuide(); if (ch !== cur) tune(ch); else showBanner();
+      }
       else if (back) closeGuide();
       return;
     }
     if (k === K.UP || k === K.CHUP) flip(1);
     else if (k === K.DOWN || k === K.CHDN) flip(-1);
-    else if (k === K.OK) openGuide();
+    else if (k === K.OK) {
+      // tap = guide, hold (~0.8 s) = subtitles on/off; decided on release or when the hold timer fires
+      if (e.repeat || okDown) return;
+      okDown = Date.now();
+      okTimer = setTimeout(function () { okTimer = null; okHeld = true; setCC(!ccOn); }, 800);
+    }
     else if (k === K.LEFT || k === K.RIGHT) { if (!bannerShown()) showBanner(8000); else stepPeek(k === K.RIGHT ? 1 : -1); }
     else if (back) {
       if (bannerShown()) { hideBanner(); return; }
@@ -533,6 +645,14 @@
       exitArmed = Date.now();
       toast('PRESS BACK AGAIN TO TURN OFF THE TV… ER, THE APP', 3000);
     }
+  }, true);
+  var okDown = 0, okTimer = null, okHeld = false;
+  document.addEventListener('keyup', function (e) {
+    if (e.keyCode !== K.OK || !okDown) return;
+    e.preventDefault();
+    okDown = 0;
+    if (okTimer) { clearTimeout(okTimer); okTimer = null; if (!guideOpen()) openGuide(); }
+    okHeld = false;
   }, true);
 
   // ---------------------------------------------------------------- lifecycle
@@ -564,6 +684,6 @@
       setTimeout(start, 10000);
     });
   }
-  window.__spelunkr = { stats: function () { return { requests: stats, skewMs: skew, knownSum: knownSum }; }, skew: function (ms) { skew = ms; }, channels: function () { return channels; }, cur: function () { return cur; }, entry: function () { return entry; }, tune: tune };
+  window.__spelunkr = { subs: function () { return { on: ccOn, index: subIndexPath, tapes: subTapes && Object.keys(subTapes).length, key: subKey, cues: subCues && subCues.length, shown: subShown && subShown.en, t: video.currentTime }; }, setCC: setCC,  stats: function () { return { requests: stats, skewMs: skew, knownSum: knownSum }; }, skew: function (ms) { skew = ms; }, channels: function () { return channels; }, cur: function () { return cur; }, entry: function () { return entry; }, tune: tune };
   start();
 })();
