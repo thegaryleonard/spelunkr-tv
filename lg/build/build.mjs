@@ -32,8 +32,13 @@ const raw = fs.readFileSync(`${ROOT}/build/engine.raw.js`, 'utf8').replace(/\nex
 fs.writeFileSync(`${ROOT}/build/engine.node.mjs`, raw + `export { ${ORDER.map(k => `${names[k]} as ${k}`).join(', ')} };\n`);
 // browser copy for the app
 const eng = `/* Spelunkr schedule engine — extracted verbatim from spelunkr.tv's bundle by build/build.mjs. Do not edit. */\n(function(){\n${raw}\nwindow.SpelunkrEngine = { ${ORDER.map(k => `${k}: ${names[k]}`).join(', ')} };\n})();\n`;
-fs.writeFileSync(`${ROOT}/app/js/engine.js`, eng);
-console.log('engine.js', eng.length, 'chars');
+// Older TVs: webOS 5 runs Chrome 68, which can't parse `??`/`?.`. Down-level the syntax; js/compat.js covers APIs (.flat etc).
+const esbuild = await import('esbuild');
+const low = (await esbuild.transform(eng, { target: 'chrome68', loader: 'js', charset: 'utf8' })).code;
+fs.writeFileSync(`${ROOT}/app/js/engine.js`, low);
+const acorn = await import('acorn');
+acorn.parse(low, { ecmaVersion: 2018, sourceType: 'script' });   // throws if anything newer than Chrome 68 slipped through
+console.log('engine.js', low.length, 'chars (chrome68 syntax)');
 
 if (process.argv.includes('--no-package')) process.exit(0);
 for (const f of fs.readdirSync(ROOT)) if (f.endsWith('.ipk')) fs.unlinkSync(`${ROOT}/${f}`);

@@ -17,12 +17,12 @@
 html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; color: var(--text); font-family: var(--body); cursor: none; }
 .hidden { display: none !important; }
 
-#video { position: absolute; inset: 0; width: 1920px; height: 1080px; background: #000; object-fit: contain; }
+#video { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 1920px; height: 1080px; background: #000; object-fit: contain; }
 
 /* ---------- full-screen cards ---------- */
-.card { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+.card { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; text-align: center;
   background: linear-gradient(180deg, #1C0A57 0%, #3a1757 35%, #7a2f3a 70%, #c0550a 100%); }
-#static { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; opacity: .9; display: none; }
+#static { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; image-rendering: pixelated; opacity: .9; display: none; }
 .card.static #static { display: block; }
 .card-body { position: relative; max-width: 1500px; padding: 0 60px; }
 .card-logo { display: flex; justify-content: center; margin-bottom: 36px; }
@@ -38,13 +38,13 @@ html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; backgro
 /* ---------- banner ---------- */
 .banner { position: absolute; left: 96px; right: 96px; bottom: 64px; background: rgba(33,40,90,.94); border: 4px solid var(--border);
   box-shadow: 0 0 0 4px #10063a, 0 12px 40px rgba(0,0,0,.6); padding: 22px 34px 26px; }
-.banner-top { display: flex; align-items: center; gap: 24px; margin-bottom: 14px; }
+.banner-top { display: flex; align-items: center; margin-bottom: 14px; }
 .b-num { font-family: var(--big); font-size: 92px; line-height: 1; color: var(--gold); text-shadow: 4px 4px 0 #000; min-width: 120px; }
 .b-logo svg { display: block; }
 .b-name { font-family: var(--large); font-size: 52px; line-height: 1.4; padding-top: 6px; color: var(--gold); text-shadow: var(--shadow); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-live { font-family: var(--nav); font-size: 28px; color: #fff; background: var(--red); padding: 6px 14px; }
 .b-clock { font-family: var(--large); font-size: 38px; color: var(--text); text-shadow: var(--shadow); min-width: 210px; text-align: right; }
-.banner-row { display: flex; align-items: baseline; gap: 24px; font-size: 42px; margin-top: 8px; }
+.banner-row { display: flex; align-items: baseline; font-size: 42px; margin-top: 8px; }
 .banner-row.dim { color: var(--dim); font-size: 34px; }
 .b-label { font-family: var(--nav); color: var(--cyan); width: 120px; flex: none; font-size: 30px; }
 .b-title { font-family: var(--large); line-height: 1.4; padding-top: 4px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: var(--shadow); }
@@ -56,7 +56,7 @@ html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; backgro
 .guide { position: absolute; left: 0; right: 0; bottom: 0; height: 700px; background: var(--bg); border-top: 4px solid var(--border);
   display: flex; flex-direction: column; }
 .g-head { display: flex; align-items: center; height: 72px; background: #10063a; font-family: var(--nav); font-size: 30px; color: var(--gold); padding: 0 40px; }
-.g-brand { width: 560px; font-family: var(--large); font-size: 32px; display: flex; align-items: center; gap: 14px; }
+.g-brand { width: 560px; font-family: var(--large); font-size: 32px; display: flex; align-items: center; }
 .g-brand small { font-size: 20px; color: var(--mid); }
 .g-s { display: inline-block; width: 44px; height: 44px; line-height: 44px; text-align: center; background: var(--gold); color: #10063a; font-family: var(--big); font-size: 38px; border: 3px solid #000; }
 .g-col-now { width: 680px; padding-left: 24px; } .g-col-next { flex: 1; padding-left: 24px; }
@@ -65,7 +65,7 @@ html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; backgro
 .g-row { display: flex; height: 94px; border-bottom: 3px solid #10063a; background: var(--panel); }
 .g-row:nth-child(odd) { background: #1d2352; }
 .g-row.sel { background: var(--panel-hi); outline: 6px solid var(--gold); outline-offset: -6px; position: relative; z-index: 1; }
-.g-ch { width: 600px; flex: none; display: flex; align-items: center; gap: 18px; padding: 0 0 0 40px; border-right: 3px solid #10063a; }
+.g-ch { width: 600px; flex: none; display: flex; align-items: center; padding: 0 0 0 40px; border-right: 3px solid #10063a; }
 .g-num { font-family: var(--big); font-size: 64px; color: var(--gold); text-shadow: var(--shadow); width: 96px; flex: none; }
 .g-ch svg { flex: none; }
 .g-name { font-family: var(--large); font-size: 30px; line-height: 1.4; padding-top: 4px; color: var(--gold); text-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -75,7 +75,7 @@ html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; backgro
 .g-m { font-family: var(--body); font-size: 24px; line-height: 1.2; color: var(--dim); margin-top: 0; }
 .g-row.sel .g-m { color: var(--cyan); }
 .g-row.playing .g-num::after { content: "▶"; font-size: 26px; color: var(--red); margin-left: 6px; vertical-align: middle; }
-.g-foot { height: 64px; display: flex; gap: 60px; align-items: center; justify-content: center; background: #10063a; font-family: var(--nav); font-size: 26px; color: var(--mid); }
+.g-foot { height: 64px; display: flex; align-items: center; justify-content: center; background: #10063a; font-family: var(--nav); font-size: 26px; color: var(--mid); }
 .g-foot b { color: var(--gold); margin-right: 8px; }
 
 /* guide open: video + cards shrink into the top-left "preview window", info on the right */
@@ -83,7 +83,7 @@ body.guide-open { background: linear-gradient(180deg, #1C0A57 0%, #3a1757 60%, #
 body.guide-open #video { left: 40px; top: 28px; width: 576px; height: 324px; outline: 4px solid var(--border); }
 body.guide-open .card { width: 1920px; height: 1080px; left: 40px; top: 28px; right: auto; bottom: auto; transform: scale(.3); transform-origin: 0 0; }
 .g-preview { position: absolute; bottom: 100%; left: 660px; right: 48px; height: 380px; padding: 28px 0 0; overflow: hidden; }
-.p-head { display: flex; align-items: center; gap: 20px; }
+.p-head { display: flex; align-items: center; }
 .p-num { font-family: var(--big); font-size: 76px; color: var(--gold); text-shadow: 4px 4px 0 #000; }
 .p-name { font-family: var(--large); font-size: 48px; color: var(--gold); text-shadow: var(--shadow); }
 .p-now { font-family: var(--large); font-size: 36px; line-height: 1.4; padding-top: 4px; margin-top: 14px; text-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -95,3 +95,12 @@ body.guide-open .card { width: 1920px; height: 1080px; left: 40px; top: 28px; ri
   font-family: var(--large); font-size: 38px; color: var(--gold); padding: 18px 40px; text-shadow: var(--shadow); }
 
 .sym { font-family: "DejaVu Sans", "LG Display", sans-serif; font-size: .8em; }
+
+/* flexbox gap fallbacks (Chrome 68 / webOS 5 has no flex gap) */
+.banner-top > * + * { margin-left: 24px; }
+.banner-row > * + * { margin-left: 24px; }
+.g-brand > * + * { margin-left: 14px; }
+.g-ch > * + * { margin-left: 18px; }
+.g-foot > * + * { margin-left: 60px; }
+.p-head > * + * { margin-left: 20px; }
+.g-brand > .g-s { margin-right: 14px; }

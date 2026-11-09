@@ -7,7 +7,7 @@ Controls on both: **▲▼** change channel · **OK** guide · **◀▶** what's
 
 | Folder | Platform | Status |
 |---|---|---|
-| `lg/` | LG webOS (tested on webOS 23, 32LR600BZUC) | v2.2.0 installed and working |
+| `lg/` | LG webOS 5 and newer (tested on webOS 23 / 32LR600BZUC; Chrome 68 = webOS 5 checked on PC) | v2.3.0 |
 | `roku/` | Roku (SceneGraph / BrightScript) | built and simulator-tested; not yet on a real Roku |
 
 ## Data access (agreed with the Spelunkr devs)
@@ -27,6 +27,7 @@ video comes from archive.org and bump audio from audio.spelunkr.tv.
   minified names change every deploy; `build/cmp-engines.mjs` checks a new engine against the old one).
 - `service/` — the data fetcher that sets the User-Agent (packaged into the same .ipk).
 - `app-wrapper/` — the old plain full-screen launcher (fallback; the devs' other suggested route).
+- Older TVs: webOS 5 (2020) runs Chrome 68. `build.mjs` down-levels the engine with esbuild, `js/compat.js` adds missing APIs, and the CSS avoids `inset` and flexbox `gap`. `build/cmp-lowered.mjs` checks the down-levelled engine against the original; `tools/oldtv/server.mjs` serves the app with faked TV services so it can be opened in an old Chromium (snapshot r561698 = 68.0.3440).
 - `tools/cdp.mjs` — screenshots, key presses and JS eval on the TV over the web inspector
   (`ares-inspect -d lgtv tv.spelunkr.app` prints the port).
 - Install: `ares-package lg/app lg/service -o lg && ares-install -d lgtv lg/tv.spelunkr.app_<ver>_all.ipk && ares-launch -d lgtv tv.spelunkr.app`
