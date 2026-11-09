@@ -1,7 +1,7 @@
 # Spelunkr TV
 
 Remote-friendly TV apps for [spelunkr.tv](https://spelunkr.tv), the free cable network made of
-Internet Archive tapes. Unofficial; built with the Spelunkr devs' blessing.
+Internet Archive tapes. Unofficial.
 
 Controls on both: **▲▼** change channel · **OK** guide · **◀▶** what's on / next · **Back** close, twice to exit.
 
