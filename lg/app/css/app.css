@@ -96,6 +96,8 @@ body.guide-open .card { width: 1920px; height: 1080px; left: 40px; top: 28px; ri
 
 .sym { font-family: "DejaVu Sans", "LG Display", sans-serif; font-size: .8em; }
 
+.b-arrows { font-size: 26px; color: var(--gold); flex: none; letter-spacing: 6px; align-self: center; }
+
 /* flexbox gap fallbacks (Chrome 68 / webOS 5 has no flex gap) */
 .banner-top > * + * { margin-left: 24px; }
 .banner-row > * + * { margin-left: 24px; }

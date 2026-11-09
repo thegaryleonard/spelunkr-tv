@@ -145,6 +145,28 @@
     }).catch(function () {});
   }
 
+  // the next `count` shows starting after the one playing at t (skips bumps / up-next cards / ads)
+  function upcoming(ch, t, count) {
+    var out = [], k = 0, first = true, it;
+    if (!ch.playlist) return out;
+    it = E.walk(ch.playlist, t);
+    while (k++ < 2000 && out.length < count) {
+      var n = it.next().value;
+      if (!n) break;
+      if (n.item.type !== 'video') continue;
+      if (first && n.startMs <= t) { first = false; continue; }   // the show on now
+      first = false;
+      out.push(n);
+    }
+    return out;
+  }
+  function dayClock(ms) {
+    var d = new Date(ms), today = new Date(nowMs());
+    var dd = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 864e5);
+    var day = dd === 0 ? '' : dd === 1 ? 'TOMORROW ' : ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()] + ' ';
+    return day + clock(ms);
+  }
+
   // current + next *show* (skips bumps / up-next cards / ads)
   function nowNext(ch, t) {
     if (!ch.playlist) return null;
@@ -372,7 +394,7 @@
   }
 
   // ---------------------------------------------------------------- banner
-  var banner = $('banner'), bannerTimer = null;
+  var banner = $('banner'), bannerTimer = null, peek = 0, PEEK_MAX = 24;
   function bannerShown() { return !banner.classList.contains('hidden'); }
   function showBanner(ms) {
     banner.classList.remove('hidden');
@@ -380,7 +402,14 @@
     clearTimeout(bannerTimer);
     bannerTimer = setTimeout(hideBanner, ms || 6000);
   }
-  function hideBanner() { banner.classList.add('hidden'); clearTimeout(bannerTimer); }
+  function hideBanner() { banner.classList.add('hidden'); clearTimeout(bannerTimer); peek = 0; }
+  // ◀▶ while the banner is up: step the NEXT line through later shows
+  function stepPeek(d) {
+    var p = Math.max(0, Math.min(PEEK_MAX, peek + d));
+    if (p > peek && cur && upcoming(cur, nowMs(), p + 1).length < p + 1) p = peek;   // nothing further scheduled yet
+    peek = p;
+    showBanner(10000);
+  }
   function renderBanner() {
     if (!cur) return;
     var t = nowMs();
@@ -399,9 +428,12 @@
     $('b-now-time').textContent = onBreak ? 'BACK AT ' + clock(nn.now.startMs) : dur((nn.now.endMs - t) / 1000) + ' LEFT';
     var pct = onBreak ? 0 : (t - nn.now.startMs) / (nn.now.endMs - nn.now.startMs) * 100;
     $('b-progress').style.width = Math.max(0, Math.min(100, pct)) + '%';
-    var nx = onBreak ? nn.now : nn.next;
+    var list = upcoming(cur, t, peek + 1), nx = list[peek] || null;
+    if (!nx && peek) { peek = Math.max(0, list.length - 1); nx = list[peek] || null; }
+    $('b-next-label').textContent = peek === 0 ? 'NEXT' : 'LATER';
     $('b-next').textContent = nx ? title(nx.item) : '';
-    $('b-next-time').textContent = nx ? clock(nx.startMs) : '';
+    $('b-next-time').textContent = nx ? dayClock(nx.startMs) : '';
+    $('b-left').style.visibility = peek > 0 ? 'visible' : 'hidden';
   }
 
   // ---------------------------------------------------------------- guide
@@ -494,7 +526,7 @@
     if (k === K.UP || k === K.CHUP) flip(1);
     else if (k === K.DOWN || k === K.CHDN) flip(-1);
     else if (k === K.OK) openGuide();
-    else if (k === K.LEFT || k === K.RIGHT) showBanner(8000);
+    else if (k === K.LEFT || k === K.RIGHT) { if (!bannerShown()) showBanner(8000); else stepPeek(k === K.RIGHT ? 1 : -1); }
     else if (back) {
       if (bannerShown()) { hideBanner(); return; }
       if (Date.now() - exitArmed < 3000) { exitApp(); return; }

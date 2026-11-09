@@ -3,7 +3,7 @@
 Remote-friendly TV apps for [spelunkr.tv](https://spelunkr.tv), the free cable network made of
 Internet Archive tapes. Unofficial.
 
-Controls on both: **▲▼** change channel · **OK** guide · **◀▶** what's on / next · **Back** close, twice to exit.
+Controls: **▲▼** change channel · **OK** guide (in the guide, **◀▶** pages through channels) · **◀▶** shows what's on; press again to scroll through later shows (LG; Roku shows now/next only) · **Back** close, twice to exit.
 
 | Folder | Platform | Status |
 |---|---|---|
